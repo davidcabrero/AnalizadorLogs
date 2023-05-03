@@ -66,7 +66,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     int lastElement = 0;
     int filaBusqueda = 0;
     public static boolean conexionRealizada = false;
-    public static String cola;
     public static boolean pulsarFila = true;
 
     /**
@@ -526,42 +525,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
             }
         }
     }
-    public ArrayList<String> datosMq = new ArrayList<>();
-
-    /**
-     * Muestra las colas mq.
-     */
-    private void verColasMq() throws FileNotFoundException, IOException {
-        File[] files = archivoLogs();
-
-        DefaultTableModel tm = (DefaultTableModel) tablaDatos.getModel();
-        int row = tablaDatos.getSelectedRow();
-        if (tablaDatos.getRowSorter() != null) {
-            row = tablaDatos.getRowSorter().convertRowIndexToModel(row);
-        }
-        String numOperacion = String.valueOf(tm.getValueAt(row, 0));
-
-        for (int i = 0; i < files.length; i++) {
-            FileReader f = new FileReader(files[i]);
-            BufferedReader b = new BufferedReader(f);
-            String linea = b.readLine();
-            DefaultTableModel model = (DefaultTableModel) tablaInfo.getModel();
-
-            while (linea != null) {
-                if (linea.contains("INICIO DE TRANSACCION (" + numOperacion + ")")) {
-                    while (linea != null && !linea.contains("FINAL DE TRANSACCION (" + numOperacion + ")")) {
-                        if (linea.contains("ENVIADO a la cola:")) {
-                            model.addRow(new Object[]{linea});
-                            datosMq.add(linea);
-                            datosMq.add(b.readLine());
-                        }
-                        linea = b.readLine();
-                    }
-                }
-                linea = b.readLine();
-            }
-        }
-    }
 
     /**
      * Método para conectarse al terminal en remoto.
@@ -707,7 +670,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     private void descargarArchivo() throws FileNotFoundException, IOException {
         File archivo = null;
         String nombreArchivo = exploradorTerminal.getSelectedFile().getName();
-        archivo = new File("C:/AppAnalizaLogs/descargas/" + nombreArchivo);
+        archivo = new File("C:/Incigest/Descargas" + nombreArchivo);
 
         BufferedWriter bfw = new BufferedWriter(new FileWriter(archivo));
 
@@ -732,14 +695,17 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tm);
         switch (seleccion) {
             case 0:
+                botonBuscar.setEnabled(true);
                 tablaDatos.setRowSorter(sorter);
                 sorter.setRowFilter(RowFilter.regexFilter("", 3));
                 break;
             case 1:
+                botonBuscar.setEnabled(false);
                 tablaDatos.setRowSorter(sorter);
                 sorter.setRowFilter(RowFilter.regexFilter("EFECTIVO", 3));
                 break;
             case 2:
+                botonBuscar.setEnabled(false);
                 tablaDatos.setRowSorter(sorter);
                 sorter.setRowFilter(RowFilter.regexFilter("TARJETA BANCARIA", 3));
                 break;
@@ -860,8 +826,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         botonSiguiente = new javax.swing.JButton();
         botonDescarga = new javax.swing.JButton();
         botonVerDatosArranque = new javax.swing.JButton();
-        botonMostrarColas = new javax.swing.JButton();
-        infoCola = new javax.swing.JLabel();
         dialogoAviso = new javax.swing.JDialog();
         cerrarDialogo = new javax.swing.JButton();
         infoAvisoLabel = new javax.swing.JLabel();
@@ -971,7 +935,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
             jLabel4.setText("Seleccione una operación");
 
             seleccionaBox.setBackground(new java.awt.Color(153, 204, 255));
-            seleccionaBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Operación", "Diálogo Mensajes", "Fases", "GUIF", "Consultas BBDD", "Errores", "Datos Terminal", "Arranque", "XML Operación", "Versiones", "Colas MQ", "Acceso al Terminal" }));
+            seleccionaBox.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Operación", "Diálogo Mensajes", "Fases", "GUIF", "Consultas BBDD", "Errores", "Datos Terminal", "Arranque", "XML Operación", "Versiones", "Acceso al Terminal" }));
 
             botonVer.setBackground(new java.awt.Color(153, 204, 255));
             botonVer.setText("Ver");
@@ -1055,11 +1019,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
             ));
             tablaInfo.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
             tablaInfo.setSelectionMode(javax.swing.ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-            tablaInfo.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseClicked(java.awt.event.MouseEvent evt) {
-                    tablaInfoMouseClicked(evt);
-                }
-            });
             jScrollPane2.setViewportView(tablaInfo);
 
             textoBusquedaLog.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -1096,16 +1055,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
                 }
             });
 
-            botonMostrarColas.setText("Mostrar Colas");
-            botonMostrarColas.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    botonMostrarColasActionPerformed(evt);
-                }
-            });
-
-            infoCola.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-            infoCola.setText("Pulse una cola");
-
             javax.swing.GroupLayout ventanaDatosLayout = new javax.swing.GroupLayout(ventanaDatos.getContentPane());
             ventanaDatos.getContentPane().setLayout(ventanaDatosLayout);
             ventanaDatosLayout.setHorizontalGroup(
@@ -1118,11 +1067,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
                     .addComponent(botonBuscarEnLog)
                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                     .addComponent(botonSiguiente)
-                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                    .addComponent(infoCola, javax.swing.GroupLayout.DEFAULT_SIZE, 137, Short.MAX_VALUE)
-                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                    .addComponent(botonMostrarColas)
-                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 265, Short.MAX_VALUE)
                     .addComponent(botonVerDatosArranque)
                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                     .addComponent(botonDescarga)
@@ -1137,9 +1082,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
                         .addComponent(botonBuscarEnLog, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(botonSiguiente)
                         .addComponent(botonDescarga)
-                        .addComponent(botonVerDatosArranque)
-                        .addComponent(botonMostrarColas)
-                        .addComponent(infoCola))
+                        .addComponent(botonVerDatosArranque))
                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 568, Short.MAX_VALUE)
                     .addContainerGap())
@@ -1550,37 +1493,37 @@ public class VentanaPrincipal extends javax.swing.JFrame {
 
             elegirFechaLog.setCurrentView(new datechooser.view.appearance.AppearancesList("Light",
                 new datechooser.view.appearance.ViewAppearance("custom",
-                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12),
+                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Tahoma", java.awt.Font.PLAIN, 11),
                         new java.awt.Color(0, 0, 0),
                         new java.awt.Color(0, 0, 255),
                         false,
                         true,
                         new datechooser.view.appearance.swing.ButtonPainter()),
-                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12),
+                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Tahoma", java.awt.Font.PLAIN, 11),
                         new java.awt.Color(0, 0, 0),
                         new java.awt.Color(0, 0, 255),
                         true,
                         true,
                         new datechooser.view.appearance.swing.ButtonPainter()),
-                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12),
+                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Tahoma", java.awt.Font.PLAIN, 11),
                         new java.awt.Color(0, 0, 255),
                         new java.awt.Color(0, 0, 255),
                         false,
                         true,
                         new datechooser.view.appearance.swing.ButtonPainter()),
-                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12),
+                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Tahoma", java.awt.Font.PLAIN, 11),
                         new java.awt.Color(128, 128, 128),
                         new java.awt.Color(0, 0, 255),
                         false,
                         true,
                         new datechooser.view.appearance.swing.LabelPainter()),
-                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12),
+                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Tahoma", java.awt.Font.PLAIN, 11),
                         new java.awt.Color(0, 0, 0),
                         new java.awt.Color(0, 0, 255),
                         false,
                         true,
                         new datechooser.view.appearance.swing.LabelPainter()),
-                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 12),
+                    new datechooser.view.appearance.swing.SwingCellAppearance(new java.awt.Font("Tahoma", java.awt.Font.PLAIN, 11),
                         new java.awt.Color(0, 0, 0),
                         new java.awt.Color(255, 0, 0),
                         false,
@@ -1692,11 +1635,9 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     private void botonVerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonVerActionPerformed
         botonDescarga.setVisible(false);
         botonVerDatosArranque.setVisible(false);
-        botonMostrarColas.setVisible(false);
-        infoCola.setVisible(false);
         tablaInfo.setDefaultRenderer(Object.class, new RenderCeldaDefault());
         int seleccion = seleccionaBox.getSelectedIndex();
-        if ((!tablaDatos.getSelectionModel().isSelectionEmpty()) || seleccion == 5 || seleccion == 6 || seleccion == 7 || seleccion == 9 || seleccion == 11) {
+        if ((!tablaDatos.getSelectionModel().isSelectionEmpty()) || seleccion == 5 || seleccion == 6 || seleccion == 7 || seleccion == 9 || seleccion == 10) {
             limpiarTexto();
             filaBusqueda = 0;
             busquedas.removeAll(busquedas);
@@ -1796,19 +1737,7 @@ public class VentanaPrincipal extends javax.swing.JFrame {
                 ventanaVersiones.setVisible(true);
                 break;
 
-                case 10: {
-                    try {
-                        pulsarFila = true;
-                        infoCola.setVisible(true);
-                        verColasMq();
-                    } catch (IOException ex) {
-                        Logger.getLogger(VentanaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                ventanaDatos.setVisible(true);
-                break;
-
-                case 11:
+                case 10:
                     infoConexion.setText("");
                     labelInfoUser.setVisible(false);
                     
@@ -1857,65 +1786,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_botonBuscarActionPerformed
 
     /**
-     * Botón para realizar una búsqueda dentro de una operación. Guarda en una
-     * ArrayList todas las filas con la información buscada.
-     */
-    private void botonBuscarEnLogActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonBuscarEnLogActionPerformed
-        boolean resultadoEncontrado = false;
-
-        filaBusqueda = 0;
-        busquedas.removeAll(busquedas);
-        lastElement = 0;
-        String busqueda = textoBusquedaLog.getText().toLowerCase();
-        DefaultTableModel tm = (DefaultTableModel) tablaInfo.getModel();
-
-        for (int i = lastElement; i < tm.getRowCount(); i++) {
-            String resultado = tm.getValueAt(i, 0).toString().toLowerCase();
-            if (resultado.contains(busqueda)) {
-                resultadoEncontrado = true;
-                busquedas.add((int) i);
-                if (!busquedas.isEmpty()) {
-                    int lastIdx = busquedas.size() - 1;
-                    lastElement = busquedas.get(lastIdx);
-                }
-            }
-        }
-
-        if (!busquedas.isEmpty()) {
-            botonSiguiente.setEnabled(true);
-        }
-        if (!resultadoEncontrado) {
-            botonSiguiente.setEnabled(false);
-            dialogoAviso.setSize(462, 96);
-            dialogoAviso.setLocationRelativeTo(null);
-            infoAvisoLabel.setText("Búsqueda sin resultados");
-            dialogoAviso.setVisible(true);
-        }
-    }//GEN-LAST:event_botonBuscarEnLogActionPerformed
-
-    /**
-     * El botón de buscar también se acciona con la tecla enter, en el campo de
-     * texto.
-     */
-    private void textoBusquedaLogKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textoBusquedaLogKeyPressed
-        if (evt.getExtendedKeyCode() == VK_ENTER)
-            botonBuscarEnLog.doClick();
-    }//GEN-LAST:event_textoBusquedaLogKeyPressed
-
-    /**
-     * Este botón recoge la búsqueda realizada y muestra seleccionadas cada una
-     * de las filas que correspondan a la búsqueda, por orden, según pulsas al
-     * botón.
-     */
-    private void botonSiguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonSiguienteActionPerformed
-        tablaInfo.changeSelection(busquedas.get(filaBusqueda), 0, false, false);
-        filaBusqueda++;
-        if ((busquedas.size()) == filaBusqueda) {
-            filaBusqueda = 0;
-        }
-    }//GEN-LAST:event_botonSiguienteActionPerformed
-
-    /**
      * Filtro de operaciones que se muestran en la tabla de datos relevantes.
      */
     private void filtroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_filtroActionPerformed
@@ -1936,41 +1806,11 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
-     * Botón para descargar un archivo visualizado del terminal conectado.
-     */
-    private void botonDescargaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonDescargaActionPerformed
-        try {
-            descargarArchivo();
-            dialogoAviso.setSize(462, 96);
-            dialogoAviso.setLocationRelativeTo(null);
-            infoAvisoLabel.setText("Se ha descargado el archivo en el directorio de la aplicacion");
-            dialogoAviso.setVisible(true);
-        } catch (IOException ex) {
-            dialogoAviso.setSize(462, 96);
-            dialogoAviso.setLocationRelativeTo(null);
-            infoAvisoLabel.setText("Error al descargar");
-            dialogoAviso.setVisible(true);
-            Logger.getLogger(VentanaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_botonDescargaActionPerformed
-
-    /**
      * Método para cerrar la conexión con el terminal al salir de la aplicación.
      */
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         cerrarConexionAnterior();
     }//GEN-LAST:event_formWindowClosing
-
-    private void botonVerDatosArranqueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonVerDatosArranqueActionPerformed
-        VentanaMasInfo.setSize(415, 325);
-        VentanaMasInfo.setVisible(true);
-        VentanaMasInfo.setLocationRelativeTo(null);
-        try {
-            verDatosArranque();
-        } catch (IOException ex) {
-            Logger.getLogger(VentanaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_botonVerDatosArranqueActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         VentanaMasInfo.setVisible(false);
@@ -2026,84 +1866,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
         ventanaVersiones.setVisible(false);
     }//GEN-LAST:event_jButton3ActionPerformed
 
-    /**
-     * Método para mostrar el mensaje enviado y recibido por la cola mq pulsada.
-     * (En desarrollo)
-     */
-    private void tablaInfoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tablaInfoMouseClicked
-
-        if (seleccionaBox.getSelectedIndex() == 10 && pulsarFila) {
-            pulsarFila = false;
-            infoCola.setVisible(false);
-            botonMostrarColas.setVisible(true);
-            JTable source = (JTable) evt.getSource();
-            int row = source.rowAtPoint(evt.getPoint());
-            int column = source.columnAtPoint(evt.getPoint());
-            cola = source.getModel().getValueAt(row, column) + "";
-            DefaultTableModel model = (DefaultTableModel) tablaInfo.getModel();
-            boolean escrito = false;
-            limpiarTexto();
-
-            for (int j = 0; j < datosMq.size(); j++) {
-                if (datosMq.get(j).contains("ENVIADO")) {
-                    model.addRow(new Object[]{datosMq.get(j)});
-                    if (cola.equals(datosMq.get(j))) {
-                        
-                        File[] files = archivoLogs();
-
-                        for (int i = 0; i < files.length; i++) {
-                            FileReader f = null;
-                            try {
-                                f = new FileReader(files[i]);
-                                BufferedReader b = new BufferedReader(f);
-                                String linea = b.readLine();
-
-                                while (linea != null && (!linea.contains("*****FASE*****") || !linea.contains("*****GUIF*****") || !linea.contains("*****LOCAL****"))) {
-                                    if (linea.contains(datosMq.get(j+1)) && !escrito) {
-                                        while (linea != null && (!linea.contains("*****FASE*****") || !linea.contains("*****GUIF*****") || !linea.contains("*****LOCAL****"))) {
-                                            model.addRow(new Object[]{linea});
-                                            if (!linea.contains("*****FASE*****") || !linea.contains("*****GUIF*****") || !linea.contains("*****LOCAL****")) {
-                                                linea = b.readLine();
-                                            } else {
-                                                
-                                                b.close();
-                                            }
-                                        }
-                                    }
-                                    if (!escrito) {
-                                        linea = b.readLine();
-                                    }
-                                }
-                                b.close();
-
-                            } catch (FileNotFoundException ex) {
-                                Logger.getLogger(VentanaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-                            } catch (IOException ex) {
-                                Logger.getLogger(VentanaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                        }
-                    }
-                    j++;
-                }
-            }
-        }
-    }//GEN-LAST:event_tablaInfoMouseClicked
-
-    /**
-     * Método para volver al índice de todas las colas mq de la operación
-     */
-    private void botonMostrarColasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonMostrarColasActionPerformed
-        pulsarFila = true;
-        infoCola.setVisible(true);
-        botonMostrarColas.setVisible(false);
-        limpiarTexto();
-        try {
-            verColasMq();
-        } catch (IOException ex) {
-            Logger.getLogger(VentanaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_botonMostrarColasActionPerformed
-
     private void botonAccesoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonAccesoActionPerformed
         if (!userText.getText().equals("")){
             ventanaVerMas.setBounds(ventanaExplorador.getBounds());
@@ -2112,6 +1874,95 @@ public class VentanaPrincipal extends javax.swing.JFrame {
             labelInfoUser.setVisible(true);
         }
     }//GEN-LAST:event_botonAccesoActionPerformed
+
+    private void botonVerDatosArranqueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonVerDatosArranqueActionPerformed
+        VentanaMasInfo.setSize(415, 325);
+        VentanaMasInfo.setVisible(true);
+        VentanaMasInfo.setLocationRelativeTo(null);
+        try {
+            verDatosArranque();
+        } catch (IOException ex) {
+            Logger.getLogger(VentanaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_botonVerDatosArranqueActionPerformed
+
+    /**
+     * Botón para descargar un archivo visualizado del terminal conectado.
+     */
+    private void botonDescargaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonDescargaActionPerformed
+        try {
+            descargarArchivo();
+            dialogoAviso.setSize(462, 96);
+            dialogoAviso.setLocationRelativeTo(null);
+            infoAvisoLabel.setText("Se ha descargado el archivo en el directorio de la aplicacion");
+            dialogoAviso.setVisible(true);
+        } catch (IOException ex) {
+            dialogoAviso.setSize(462, 96);
+            dialogoAviso.setLocationRelativeTo(null);
+            infoAvisoLabel.setText("Error al descargar");
+            dialogoAviso.setVisible(true);
+            Logger.getLogger(VentanaPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_botonDescargaActionPerformed
+
+    /**
+     * Este botón recoge la búsqueda realizada y muestra seleccionadas cada una
+     * de las filas que correspondan a la búsqueda, por orden, según pulsas al
+     * botón.
+     */
+    private void botonSiguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonSiguienteActionPerformed
+        tablaInfo.changeSelection(busquedas.get(filaBusqueda), 0, false, false);
+        filaBusqueda++;
+        if ((busquedas.size()) == filaBusqueda) {
+            filaBusqueda = 0;
+        }
+    }//GEN-LAST:event_botonSiguienteActionPerformed
+
+    /**
+     * Botón para realizar una búsqueda dentro de una operación. Guarda en una
+     * ArrayList todas las filas con la información buscada.
+     */
+    private void botonBuscarEnLogActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonBuscarEnLogActionPerformed
+        boolean resultadoEncontrado = false;
+
+        filaBusqueda = 0;
+        busquedas.removeAll(busquedas);
+        lastElement = 0;
+        String busqueda = textoBusquedaLog.getText().toLowerCase();
+        DefaultTableModel tm = (DefaultTableModel) tablaInfo.getModel();
+
+        for (int i = lastElement; i < tm.getRowCount(); i++) {
+            String resultado = tm.getValueAt(i, 0).toString().toLowerCase();
+            if (resultado.contains(busqueda)) {
+                resultadoEncontrado = true;
+                busquedas.add((int) i);
+                if (!busquedas.isEmpty()) {
+                    int lastIdx = busquedas.size() - 1;
+                    lastElement = busquedas.get(lastIdx);
+                }
+            }
+        }
+
+        if (!busquedas.isEmpty()) {
+            botonSiguiente.setEnabled(true);
+        }
+        if (!resultadoEncontrado) {
+            botonSiguiente.setEnabled(false);
+            dialogoAviso.setSize(462, 96);
+            dialogoAviso.setLocationRelativeTo(null);
+            infoAvisoLabel.setText("Búsqueda sin resultados");
+            dialogoAviso.setVisible(true);
+        }
+    }//GEN-LAST:event_botonBuscarEnLogActionPerformed
+
+    /**
+     * El botón de buscar también se acciona con la tecla enter, en el campo de
+     * texto.
+     */
+    private void textoBusquedaLogKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textoBusquedaLogKeyPressed
+        if (evt.getExtendedKeyCode() == VK_ENTER)
+        botonBuscarEnLog.doClick();
+    }//GEN-LAST:event_textoBusquedaLogKeyPressed
 
     /**
      * @param args the command line arguments
@@ -2165,7 +2016,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JButton botonBuscar;
     private javax.swing.JButton botonBuscarEnLog;
     private javax.swing.JButton botonDescarga;
-    private javax.swing.JButton botonMostrarColas;
     private javax.swing.JButton botonSeleccionarFichero;
     private javax.swing.JButton botonSiguiente;
     private javax.swing.JButton botonVer;
@@ -2182,7 +2032,6 @@ public class VentanaPrincipal extends javax.swing.JFrame {
     private javax.swing.JComboBox<String> filtro;
     private javax.swing.JComboBox<String> funcionElegida;
     private javax.swing.JLabel infoAvisoLabel;
-    private javax.swing.JLabel infoCola;
     private java.awt.Label infoConexion;
     private javax.swing.JLabel infoLabel;
     private javax.swing.JDialog inicioSesionTerminal;
